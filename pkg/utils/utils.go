@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/samber/lo"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/apis/v1alpha1"
 	karpv1 "sigs.k8s.io/karpenter/pkg/apis/v1"
 	"sigs.k8s.io/karpenter/pkg/cloudprovider"
 )
@@ -63,6 +64,12 @@ func GetAllSingleValuedRequirementLabels(instanceType *cloudprovider.InstanceTyp
 		return labels
 	}
 	for key, req := range instanceType.Requirements {
+		// This is an internal provider label/tag used to associate instances with
+		// an ECSNodeClass. It must not be emitted back into NodeClaim scheduling
+		// requirements, or NodeClaim validation rejects it as a restricted domain.
+		if key == v1alpha1.LabelNodeClass {
+			continue
+		}
 		if req.Len() == 1 {
 			labels[key] = req.Values()[0]
 		}

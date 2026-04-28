@@ -62,7 +62,10 @@ func NewNodeClaimTemplate(nodePool *v1.NodePool) *NodeClaimTemplate {
 		v1.NodeClassLabelKey(nodePool.Spec.Template.Spec.NodeClassRef.GroupKind()): nodePool.Spec.Template.Spec.NodeClassRef.Name,
 	})
 	nct.Requirements.Add(scheduling.NewNodeSelectorRequirementsWithMinValues(nct.Spec.Requirements...).Values()...)
-	nct.Requirements.Add(scheduling.NewLabelRequirements(nct.Labels).Values()...)
+	requirementLabels := lo.OmitBy(nct.Labels, func(key string, _ string) bool {
+		return key == v1.NodeClassLabelKey(nodePool.Spec.Template.Spec.NodeClassRef.GroupKind())
+	})
+	nct.Requirements.Add(scheduling.NewLabelRequirements(requirementLabels).Values()...)
 	return nct
 }
 
