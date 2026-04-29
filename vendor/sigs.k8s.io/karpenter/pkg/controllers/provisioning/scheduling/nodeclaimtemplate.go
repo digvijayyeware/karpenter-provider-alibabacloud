@@ -25,6 +25,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
+	providerv1alpha1 "github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/apis/v1alpha1"
 	v1 "sigs.k8s.io/karpenter/pkg/apis/v1"
 	"sigs.k8s.io/karpenter/pkg/cloudprovider"
 	"sigs.k8s.io/karpenter/pkg/scheduling"
@@ -75,6 +76,11 @@ func (i *NodeClaimTemplate) ToNodeClaim() *v1.NodeClaim {
 	i.Requirements.Add(scheduling.NewRequirementWithFlexibility(corev1.LabelInstanceTypeStable, corev1.NodeSelectorOpIn, i.Requirements.Get(corev1.LabelInstanceTypeStable).MinValues, lo.Map(instanceTypes, func(i *cloudprovider.InstanceType, _ int) string {
 		return i.Name
 	})...))
+
+	// The provider-specific ECSNodeClass label is useful as node metadata, but it
+	// is not a valid NodeClaim scheduling requirement because the provider domain
+	// is restricted by Karpenter validation.
+	delete(i.Requirements, providerv1alpha1.LabelNodeClass)
 
 	nc := &v1.NodeClaim{
 		ObjectMeta: metav1.ObjectMeta{
